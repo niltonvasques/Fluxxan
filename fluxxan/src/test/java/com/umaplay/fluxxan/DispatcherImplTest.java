@@ -107,9 +107,15 @@ public class DispatcherImplTest {
         Middleware middleware = mock(Middleware.class);
 
         mDispatcher.registerMiddleware(middleware);
-        dispatch(new Action("EMPTY_ACTION"));
+        Action action = new Action("EMPTY_ACTION");
+        dispatch(action);
 
-        verify(middleware, times(1)).intercept(anyObject(), any(Action.class));
+        ArgumentCaptor<Boolean> stateCaptor = ArgumentCaptor.forClass(Boolean.class);
+        ArgumentCaptor<Action> actionCaptor = ArgumentCaptor.forClass(Action.class);
+        verify(middleware, times(1)).intercept(stateCaptor.capture(), actionCaptor.capture());
+
+        assertEquals(action, actionCaptor.getValue());
+        assertEquals(false, stateCaptor.getValue());
 
         mDispatcher.unregisterMiddleware(Middleware.class);
     }
