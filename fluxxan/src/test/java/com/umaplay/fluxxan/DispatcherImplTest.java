@@ -1,6 +1,7 @@
 package com.umaplay.fluxxan;
 
 import com.umaplay.fluxxan.impl.BaseActionCreator;
+import com.umaplay.fluxxan.impl.BaseMiddleware;
 import com.umaplay.fluxxan.impl.BaseReducer;
 import com.umaplay.fluxxan.impl.DispatcherImpl;
 
@@ -22,6 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.doAnswer;
@@ -98,6 +100,29 @@ public class DispatcherImplTest {
         mDispatcher.registerReducer(reducer);
         mDispatcher.unregisterReducer(MyReducer.class);
         assertNull(mDispatcher.getReducer(MyReducer.class));
+    }
+
+    @Test
+    public void registerMiddlewareWorks() throws Exception {
+        Middleware middleware = mock(Middleware.class);
+
+        mDispatcher.registerMiddleware(middleware);
+        dispatch(new Action("EMPTY_ACTION"));
+
+        verify(middleware, times(1)).intercept(anyObject(), any(Action.class));
+
+        mDispatcher.unregisterMiddleware(Middleware.class);
+    }
+
+    @Test
+    public void unregisterMiddlewareWorks() throws Exception {
+        Middleware middleware = mock(Middleware.class);
+
+        mDispatcher.registerMiddleware(middleware);
+        mDispatcher.unregisterMiddleware(middleware.getClass());
+        dispatch(new Action("EMPTY_ACTION"));
+
+        verify(middleware, never()).intercept(anyObject(), any(Action.class));
     }
 
     @Test

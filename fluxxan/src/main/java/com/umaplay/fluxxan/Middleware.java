@@ -38,5 +38,5 @@ public interface Middleware<State> {
      *
      * @return The current reducer instance
      */
-    public Middleware<State> reset();
+    //public Middleware<State> reset();
 }
