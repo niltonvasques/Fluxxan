@@ -17,10 +17,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 // Roboeletric still not supports API 24 stuffs
 @Config(sdk = 23, constants=BuildConfig.class)
@@ -103,12 +104,70 @@ public class FluxxanTest {
 
         ArgumentCaptor<Boolean> captor = ArgumentCaptor.forClass(Boolean.class);
 
-        mFluxxan.getDispatcher().dispatch(new Action("EMPTY_ACTION"));
+        dispatch(new Action("EMPTY_ACTION"));
 
-        verify(listener).hasStateChanged(captor.capture(), anyBoolean());
+        verify(listener, times(1)).hasStateChanged(captor.capture(), anyBoolean());
 
         assertEquals(true, captor.getValue());
 
         mFluxxan.unregisterReducer(MyReducer.class);
+    }
+
+    @Test
+    public void removeListenerWorks() throws Exception {
+        MyReducer reducer = new MyReducer();
+        mFluxxan.registerReducer(reducer);
+
+        StateListener listener = mock(StateListener.class);
+
+        mFluxxan.addListener(listener);
+        mFluxxan.removeListener(listener);
+
+        dispatch(new Action("EMPTY_ACTION"));
+
+        verify(listener, never()).hasStateChanged(anyBoolean(), anyBoolean());
+
+        mFluxxan.unregisterReducer(MyReducer.class);
+    }
+
+    @Test
+    public void shouldStartDispatcher() throws Exception {
+        Fluxxan<Boolean> fluxxan = new Fluxxan<>(true);
+        fluxxan.start();
+
+        dispatch(fluxxan, new Action("EMPTY_ACTION"));
+
+        fluxxan.unregisterReducer(Reducer.class);
+    }
+
+    @Test
+    public void shouldStopDispatcher() throws Exception {
+        exception.expect(IllegalStateException.class);
+
+        Fluxxan<Boolean> fluxxan = new Fluxxan<>(true);
+        fluxxan.start();
+        fluxxan.stop();
+
+        Reducer reducer = mock(Reducer.class);
+        fluxxan.registerReducer(reducer);
+
+        fluxxan.getDispatcher().dispatch(new Action("EMPTY_ACTION"));
+
+        fluxxan.unregisterReducer(MyReducer.class);
+    }
+
+    private void dispatch(Action action) {
+        dispatch(mFluxxan, action);
+    }
+
+    private void dispatch(Fluxxan fluxxan, Action action) {
+        fluxxan.getDispatcher().dispatch(action);
+        while (fluxxan.getDispatcher().isDispatching()) {
+            try {
+                Thread.sleep(5);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
